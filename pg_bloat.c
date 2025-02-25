@@ -100,7 +100,7 @@ Datum get_bloat(PG_FUNCTION_ARGS) {
 
             tuphdr = (HeapTupleHeader)PageGetItem(page, lp);
 
-            curr_xmax = HeapTupleHeaderGetUpdateXid(tuphdr); /* Get the ID of the updating transaction */
+            curr_xmax = HeapTupleHeaderGetRawXmax(tuphdr); /* Get the ID of the updating transaction */
             ItemPointerSet(&item, blkno, curr_off);  /* Make self pointer */
 
             /* After an update, the old tuple points to the new tuple. This check ensures we are dealing with tuple updates */
