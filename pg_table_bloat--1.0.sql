@@ -9,7 +9,8 @@
 
 CREATE FUNCTION get_bloat(IN table_schema text, IN table_name text,
     OUT relname text,
-    OUT num_dead_tuples int8)
+    OUT num_dead_tuples int8,
+    OUT dead_tuple_size int8)
 AS 'MODULE_PATHNAME', 'get_bloat'
 LANGUAGE C STRICT PARALLEL SAFE;
 

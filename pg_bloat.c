@@ -18,7 +18,7 @@
 
 PG_MODULE_MAGIC;
 
-#define RESULT_ARG_NUM 2
+#define RESULT_ARG_NUM 3
 
 Datum get_bloat(PG_FUNCTION_ARGS);
 
@@ -28,7 +28,7 @@ Datum get_bloat(PG_FUNCTION_ARGS) {
     RangeVar *r_var;
     Relation rel;
     uint64 table_size;
-    int64 num_dead_tuples;
+    int64 num_dead_tuples, dead_tuple_size;
     BlockNumber blkno, num_blocks;
     Buffer buffer, buffer2;
     Page page, page2;
@@ -59,7 +59,7 @@ Datum get_bloat(PG_FUNCTION_ARGS) {
     }
     
     num_blocks = (table_size / BLCKSZ);
-    num_dead_tuples = 0;
+    dead_tuple_size = num_dead_tuples = 0;
 
     if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
 		elog(ERROR, "return type must be a row type");
@@ -94,6 +94,7 @@ Datum get_bloat(PG_FUNCTION_ARGS) {
             }
 
             if(ItemIdIsDead(lp)) {
+                dead_tuple_size += ItemIdGetLength(lp);
                 num_dead_tuples++;
                 continue;
             }
@@ -120,6 +121,7 @@ Datum get_bloat(PG_FUNCTION_ARGS) {
 
                     if (TransactionIdIsValid(curr_xmax) && TransactionIdEquals(HeapTupleHeaderGetXmin(tuphdr2), curr_xmax))
                     {
+                        dead_tuple_size += ItemIdGetLength(lp);
                         num_dead_tuples++;
                     }
                 } else {
@@ -150,7 +152,7 @@ Datum get_bloat(PG_FUNCTION_ARGS) {
                         {
                             /* Txn still in progress */
                         }
-
+                        dead_tuple_size += ItemIdGetLength(lp);
                         num_dead_tuples++;
                     }
 
@@ -159,6 +161,7 @@ Datum get_bloat(PG_FUNCTION_ARGS) {
                 }
                 
             } else if(ItemPointerEquals(&tuphdr->t_ctid, &item) && TransactionIdIsValid(curr_xmax)) { /* Deleted tuples would have their tid pointing to self and xmax set */
+                dead_tuple_size += ItemIdGetLength(lp);
                 num_dead_tuples++;
             }
         }
@@ -167,6 +170,7 @@ Datum get_bloat(PG_FUNCTION_ARGS) {
 
     values[0] = CStringGetTextDatum(RelationGetRelationName(rel));
     values[1] = Int64GetDatum(num_dead_tuples);
+    values[2] = Int64GetDatum(dead_tuple_size);
 
     tuple = heap_form_tuple(tupdesc, values, nulls);
     result = HeapTupleGetDatum(tuple);
