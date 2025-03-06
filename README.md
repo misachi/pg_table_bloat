@@ -1,8 +1,15 @@
 # pg_table_bloat
 
-A simple extension to get an estimate of table bloat -- number of tuples that updated/deleted but still occupying space and would be removed by vacuum process
+A simple extension to get an estimate of table bloat -- number of tuples that updated/deleted but still occupying space and would be removed by vacuum process. The results displayed may not coincide with the vacuum stats as the goal here is to only get the approximate number of deletable items
+(This extension is mostly for me to dig into the UPDATE and VACUUM and Btree Index implementations of Postgres)
 
-To install
+To install run this from within the source directory
+```
+make PG_CONFIG=/usr/bin/pg_config
+make PG_CONFIG=/usr/bin/pg_config install
+```
+
+Run this once logged in to your database
 ```
 create extension pg_table_bloat;
 ```
